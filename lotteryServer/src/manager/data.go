@@ -11,7 +11,7 @@ import (
 /*
 	return: 红/蓝球各个槽位各数字出现的次数
 */
-func FormatAndMergeRawBallData(data *[]model.RBBall) (*[][]int, *[]int) {
+func FormatAndMergeRawBallData(data *[]model.DoubleColorBall) (*[][]int, *[]int) {
 	blueSlots := []int{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 	redSlots := [][]int{
 		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},

@@ -9,8 +9,10 @@ import (
 	"net/http"
 )
 
-
-func GetHistoryData(hist int) (error, []model.RBBall) {
+/*
+	return: [{Red: "01,03,21,17,07,04", Blue: "12"}, ..., {Red: "12,33,14,07,24, 31", Blue: "09"}]
+*/
+func GetHistoryData(hist int) (error, []model.DoubleColorBall) {
 	/* 向彩票官网拉数据
 		ping www.cwl.gov.cn
 		61.132.231.47
@@ -33,12 +35,35 @@ func GetHistoryData(hist int) (error, []model.RBBall) {
 		return err, nil
 	}
 
-	rawData := make([]model.RBBall, 0)
+	rawData := make([]model.DoubleColorBall, 0)
 	for _, offres := range offRes.Result {
-		rawData = append(rawData, model.RBBall{
+		rawData = append(rawData, model.DoubleColorBall{
 			Red: offres.(map[string]interface{})["red"].(string),
 			Blue: offres.(map[string]interface{})["blue"].(string),
+			Time: offres.(map[string]interface{})["date"].(string),
 		})
 	}
 	return nil, rawData
+}
+
+func CompareDoubleColorData(hist *[]model.DoubleColorBall, last string) int {
+	var cnt int
+	if last != "" {
+		for ; cnt < len(*hist); cnt++ {
+			if (*hist)[cnt].Time[:10] <= last {
+				break
+			}
+			(*hist)[cnt].Time = (*hist)[cnt].Time[:10]
+		}
+
+		if cnt < 1 {
+			return cnt
+		}
+	} else {
+		cnt = len(*hist)
+		for i := 0; i < cnt; i++ {
+			(*hist)[i].Time = (*hist)[i].Time[:10]
+		}
+	}
+	return cnt
 }

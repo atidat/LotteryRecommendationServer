@@ -11,24 +11,27 @@ import (
 
 func Register(r *gin.Engine) {
 	//curl -H "Content-Type:application/json" -X GET 'http://localhost:8080/api/v1/healthcheck'
-	r.GET("/api/v1/healthcheck", HealthCheck())
+	r.GET("/api/v1/healthcheck", healthCheck())
 
 	//curl -H "Content-Type:application/json" -X GET 'http://localhost:8080/api/v1/recommendation/doublecolor/normal?history=100'
-	r.GET("/api/v1/recommendation/doublecolor/normal", GetTopNormalRec())
+	r.GET("/api/v1/recommendation/doublecolor/normal", getTopNormalRec())
 
 	//curl -H "Content-Type:application/json" -X GET 'http://localhost:8080/api/v1/recommendation/doublecolor/normal/batch?top=3&history=100'
-	r.GET("/api/v1/recommendation/doublecolor/normal/batch", GetTopNNormalRec())
+	r.GET("/api/v1/recommendation/doublecolor/normal/batch", getTopNNormalRec())
+
+	//curl -H "Content-Type:application/json" -X POST -d '' 'http://localhost:8080/api/v1/doublecolor/datarepo'
+	r.POST("/api/v1/doublecolor/datarepo", updateDoubleColorDataRepo())
 }
 
 
-func HealthCheck() gin.HandlerFunc {
+func healthCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.String(200, "pong")
 	}
 }
 
 
-func GetTopNormalRec() gin.HandlerFunc {
+func getTopNormalRec() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logrus.Info("topN recommends in")
 
@@ -66,8 +69,36 @@ func GetTopNormalRec() gin.HandlerFunc {
 
 
 // To be continued
-func GetTopNNormalRec() gin.HandlerFunc {
+func getTopNNormalRec() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.String(http.StatusOK, "")
+	}
+}
+
+func updateDoubleColorDataRepo() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		err, histData := service.GetHistoryData(100)
+		if err != nil {
+			logrus.Errorf("get topN normal history failed: %s", err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		logrus.Info("get history data done")
+
+		dbLastDate := service.GetDoubleColorNewestData().Date
+		logrus.Infof("last date in db: %s", dbLastDate)
+
+		cnt := service.CompareDoubleColorData(&histData, dbLastDate)
+		if cnt == 0 {
+			c.String(http.StatusOK, "update successfully")
+			return
+		}
+		logrus.Info("get newest data done")
+
+		service.BatchInsertDoubleColorHist(histData[:cnt])
+		logrus.Info("batch insert done")
+		service.BatchUpdateDoubleColorCnt(histData[:cnt])
+		logrus.Info("batch update done")
+		c.String(http.StatusOK, "update successfully")
 	}
 }
