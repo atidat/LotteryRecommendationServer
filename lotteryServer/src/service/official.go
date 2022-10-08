@@ -4,15 +4,16 @@ import (
 	"LotteryServer/src/model"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 /*
-	return: [{Red: "01,03,21,17,07,04", Blue: "12"}, ..., {Red: "12,33,14,07,24, 31", Blue: "09"}]
+return: [{Red: "01,03,21,17,07,04", Blue: "12"}, ..., {Red: "12,33,14,07,24, 31", Blue: "09"}]
 */
-func GetHistoryData(hist int) (error, []model.DoubleColorBall) {
+func FetchHistoryData(hist int) (error, []model.DoubleColorBall) {
 	/* 向彩票官网拉数据
 		ping www.cwl.gov.cn
 		61.132.231.47
@@ -21,10 +22,10 @@ func GetHistoryData(hist int) (error, []model.DoubleColorBall) {
 	*/
 	url := fmt.Sprintf("http://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=%d&issueStart=&issueEnd=&dayStart=&dayEnd=", hist)
 	res, err := http.Get(url)
-	defer res.Body.Close()
 	if err != nil {
 		return err, nil
 	}
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 
@@ -38,7 +39,7 @@ func GetHistoryData(hist int) (error, []model.DoubleColorBall) {
 	rawData := make([]model.DoubleColorBall, 0)
 	for _, offres := range offRes.Result {
 		rawData = append(rawData, model.DoubleColorBall{
-			Red: offres.(map[string]interface{})["red"].(string),
+			Red:  offres.(map[string]interface{})["red"].(string),
 			Blue: offres.(map[string]interface{})["blue"].(string),
 			Time: offres.(map[string]interface{})["date"].(string),
 		})

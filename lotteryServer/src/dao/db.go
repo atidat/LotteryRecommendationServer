@@ -2,7 +2,9 @@ package dao
 
 import (
 	"LotteryServer/src/model"
+	"LotteryServer/src/utils"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,17 +31,16 @@ func DBInit() {
 
 func connCfgInfo() string {
 	// TODO 后续从文件读取，文件要加密
-	connCfg := model.Conn{
-		User: "lottery",
-		Pawd: "123",
-		Host: "127.0.0.1",
-		Port: 3306,
+	connCfg := model.DBConn{
+		User:   "lottery",
+		Pawd:   "123",
+		Host:   "127.0.0.1",
+		Port:   3306,
 		DbName: "business",
 	}
 	return fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local",
-		connCfg.User ,connCfg.Pawd, connCfg.Host, connCfg.Port, connCfg.DbName)
+		connCfg.User, connCfg.Pawd, connCfg.Host, connCfg.Port, connCfg.DbName)
 }
-
 
 func createTable() bool {
 	mig := db.Migrator()
@@ -49,45 +50,9 @@ func createTable() bool {
 			return false
 		}
 	}
-	if !mig.HasTable(&model.TblDoubleColorRed1{}) {
-		if err := mig.CreateTable(&model.TblDoubleColorRed1{}); err != nil {
-			logrus.Errorf("create table double red1 balls failed: %s", err.Error())
-			return false
-		}
-	}
-	if !mig.HasTable(&model.TblDoubleColorRed2{}) {
-		if err := mig.CreateTable(&model.TblDoubleColorRed2{}); err != nil {
-			logrus.Errorf("create table double red2 balls failed: %s", err.Error())
-			return false
-		}
-	}
-	if !mig.HasTable(&model.TblDoubleColorRed3{}) {
-		if err := mig.CreateTable(&model.TblDoubleColorRed3{}); err != nil {
-			logrus.Errorf("create table double red3 balls failed: %s", err.Error())
-			return false
-		}
-	}
-	if !mig.HasTable(&model.TblDoubleColorRed4{}) {
-		if err := mig.CreateTable(&model.TblDoubleColorRed4{}); err != nil {
-			logrus.Errorf("create table double red4 balls failed: %s", err.Error())
-			return false
-		}
-	}
-	if !mig.HasTable(&model.TblDoubleColorRed5{}) {
-		if err := mig.CreateTable(&model.TblDoubleColorRed5{}); err != nil {
-			logrus.Errorf("create table double red5 balls failed: %s", err.Error())
-			return false
-		}
-	}
-	if !mig.HasTable(&model.TblDoubleColorRed6{}) {
-		if err := mig.CreateTable(&model.TblDoubleColorRed6{}); err != nil {
-			logrus.Errorf("create table double red6 balls failed: %s", err.Error())
-			return false
-		}
-	}
-	if !mig.HasTable(&model.TblDoubleColorBlue{}) {
-		if err := mig.CreateTable(&model.TblDoubleColorBlue{}); err != nil {
-			logrus.Errorf("create table double blue balls failed: %s", err.Error())
+	if !mig.HasTable(&model.TblDoubleColorTotal{}) {
+		if err := mig.CreateTable(&model.TblDoubleColorTotal{}); err != nil {
+			logrus.Errorf("create table double color total failed: %s", err.Error())
 			return false
 		}
 	}
@@ -110,38 +75,42 @@ func GetDoubleColorNewest() *model.TblDoubleColorHist {
 	return dbnew
 }
 
-func BatchInsertDoubleColorHistData(data []model.DoubleColorBall) {
+// data由近到远排序
+func BatchInsertDoubleColorHistDB(data []model.DoubleColorBall) {
 	dcHists := make([]model.TblDoubleColorHist, len(data))
 	for i := 0; i < len(data); i++ {
 		dcHists[i] = model.TblDoubleColorHist{
 			Date: data[i].Time,
-			Red: data[i].Red,
+			Red:  data[i].Red,
 			Blue: data[i].Blue,
 		}
 	}
-	db.CreateInBatches(dcHists, len(dcHists))
+	rowsAff := db.CreateInBatches(dcHists, len(dcHists)).RowsAffected
+	if rowsAff == 0 {
+		return
+	}
+
+	// 需要统计成功写入的条数，然后在更新到Total表里
+	// 默认策略写入成功的都是离当前时间最近的
+	toReds, toBlues := GetDoubleColorCnts()
+	for _, datum := range data[:rowsAff] {
+		reds, blues := utils.ConvertRedBallStr(datum.Red), utils.ConvertBlueBallStr(datum.Blue)
+		utils.AcculateRedBalls(&(toReds.RSlots), reds)
+		utils.AcculateBlueBalls(&(toBlues.BSlots), blues)
+	}
+	totals := &model.TblDoubleColorTotal{utils.Convert2RedBallStr(toReds.RSlots), utils.Convert2BlueBallStr(toBlues.BSlots)}
+	db.Updates(totals)
 }
 
-func GetDoubleColorCnts() ([]*model.DoubleColorRed, *model.TblDoubleColorBlue) {
-	red1, red2 := &model.TblDoubleColorRed1{}, &model.TblDoubleColorRed2{}
-	red3, red4 := &model.TblDoubleColorRed3{}, &model.TblDoubleColorRed4{}
-	red5, red6 := &model.TblDoubleColorRed5{}, &model.TblDoubleColorRed6{}
-	blue:= &model.TblDoubleColorBlue{}
-	db.First(red1); db.First(red2); db.First(red3)
-	db.First(red4);	db.First(red5);	db.First(red6)
-	db.First(blue)
-	return []*model.DoubleColorRed{
-		&(red1.DoubleColorRed), &(red1.DoubleColorRed),
-		&(red1.DoubleColorRed), &(red1.DoubleColorRed),
-		&(red1.DoubleColorRed)}, blue
+func GetDoubleColorCnts() (*model.DoubleColorRed, *model.DoubleColorBlue) {
+	balls := &model.TblDoubleColorTotal{}
+	db.First(balls)
+	redBallsCnt := utils.ConvertRedBallStr(balls.Reds)
+	blueBallsCnt := utils.ConvertBlueBallStr(balls.Blues)
+	return &model.DoubleColorRed{redBallsCnt}, &model.DoubleColorBlue{blueBallsCnt}
 }
 
-func UpdateDoubleColorCntData(redBallsCnts []*model.DoubleColorRed, blueBallCnt *model.TblDoubleColorBlue) {
-	db.Updates(redBallsCnts[0])
-	db.Updates(redBallsCnts[1])
-	db.Updates(redBallsCnts[2])
-	db.Updates(redBallsCnts[3])
-	db.Updates(redBallsCnts[4])
-	db.Updates(redBallsCnts[5])
-	db.Updates(blueBallCnt)
+func UpdateDoubleColorCntData(redBallsCnts *model.DoubleColorRed, blueBallCnt *model.DoubleColorBlue) {
+	redsStr, bluesStr := utils.Convert2RedBallStr(*&redBallsCnts.RSlots), utils.Convert2BlueBallStr(*&blueBallCnt.BSlots)
+	db.Updates(model.TblDoubleColorTotal{redsStr, bluesStr})
 }

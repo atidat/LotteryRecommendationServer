@@ -2,12 +2,12 @@ package handler
 
 import (
 	"LotteryServer/src/service"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
-)
 
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+)
 
 func Register(r *gin.Engine) {
 	//curl -H "Content-Type:application/json" -X GET 'http://localhost:8080/api/v1/healthcheck'
@@ -23,13 +23,11 @@ func Register(r *gin.Engine) {
 	r.POST("/api/v1/doublecolor/datarepo", updateDoubleColorDataRepo())
 }
 
-
 func healthCheck() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.String(200, "pong")
 	}
 }
-
 
 func getTopNormalRec() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -43,13 +41,13 @@ func getTopNormalRec() gin.HandlerFunc {
 			return
 		}
 		hist, err := strconv.Atoi(histStr)
-		if  err != nil {
+		if err != nil {
 			logrus.Errorf("get topN normal convert failed: %s-%s", err.Error())
 			c.String(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		err, histData := service.GetHistoryData(hist)
+		err, histData := service.FetchHistoryData(hist)
 		if err != nil {
 			logrus.Errorf("get topN normal history failed: %s", err.Error())
 			c.String(http.StatusInternalServerError, err.Error())
@@ -67,7 +65,6 @@ func getTopNormalRec() gin.HandlerFunc {
 	}
 }
 
-
 // To be continued
 func getTopNNormalRec() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -77,7 +74,7 @@ func getTopNNormalRec() gin.HandlerFunc {
 
 func updateDoubleColorDataRepo() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err, histData := service.GetHistoryData(100)
+		err, histData := service.FetchHistoryData(100)
 		if err != nil {
 			logrus.Errorf("get topN normal history failed: %s", err.Error())
 			c.String(http.StatusInternalServerError, err.Error())

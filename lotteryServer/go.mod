@@ -1,11 +1,12 @@
 module LotteryServer
 
-go 1.17
+go 1.19
 
 require (
 	github.com/gin-gonic/gin v1.7.4
 	github.com/jinzhu/gorm v1.9.16
 	github.com/sirupsen/logrus v1.8.1
+	github.com/go-redis/redis v6.15.9+incompatible
 	gorm.io/driver/mysql v1.1.2
 )
 
