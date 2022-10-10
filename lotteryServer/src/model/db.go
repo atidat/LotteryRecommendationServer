@@ -1,11 +1,15 @@
 package model
 
+var CacheDoubleColorHist = "double-color-hist"
+var CacheDoubleColorRedsCnt = "double-color-reds-cnt"
+var CacheDoubleColorBluesCnt = "double-color-blues-cnt"
+
 type RedArray [34]int
 type BlueArray [17]int
 
 type CacheConn struct {
-	Addr		string `json:"addr"`
-	Password	string `json:"password"`
+	Addr     string `json:"addr"`
+	Password string `json:"password"`
 }
 
 type DBConn struct {

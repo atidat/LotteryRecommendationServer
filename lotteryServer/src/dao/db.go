@@ -33,7 +33,7 @@ func connCfgInfo() string {
 	// TODO 后续从文件读取，文件要加密
 	connCfg := model.DBConn{
 		User:   "lottery",
-		Pawd:   "123",
+		Pawd:   "123123",
 		Host:   "127.0.0.1",
 		Port:   3306,
 		DbName: "business",
