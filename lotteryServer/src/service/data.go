@@ -28,20 +28,23 @@ func GetDoubleColorNewestData() *model.TblDoubleColorHist {
 }
 
 func BatchInsertDoubleColorHist(data []model.DoubleColorBall) {
-	dao.BatchInsertDoubleColorHistData(data)
+	dao.BatchInsertDoubleColorHistDB(data)
 }
 
 func BatchUpdateDoubleColorCnt(data []model.DoubleColorBall) {
-	redBallsCnts, blueBallCnt := dao.GetDoubleColorCnts()
+	redBallsRaw, blueBallRaw := dao.GetDoubleColorCnts()
+	redBallsCnts, blueBallsCnts := redBallsRaw.RSlots, blueBallRaw.BSlots
 	for _, datus := range data {
 		redBalls := utils.ConvertRedBallStr(datus.Red) // redBalls含有6数字个数字，每个数字[1~33]
 		blueBalls := utils.ConvertRedBallStr(datus.Blue)
-		for i := 0; i < len(redBallsCnts); i++ {
-			doubleColorRedBallInc(redBallsCnts, i, redBalls[i])
+		for _, redBall := range redBalls {
+			redBallsCnts[redBall]++
 		}
-		doubleColorBlueBallInc(blueBallCnt, blueBalls[0])
+		for _, blueBall := range blueBalls {
+			blueBallsCnts[blueBall]++
+		}
 	}
-	dao.UpdateDoubleColorCntData(redBallsCnts, blueBallCnt)
+	dao.UpdateDoubleColorCntData(redBallsRaw, blueBallRaw)
 }
 
 func doubleColorRedBallInc(handlers []*model.DoubleColorRed, ind, tar int) {

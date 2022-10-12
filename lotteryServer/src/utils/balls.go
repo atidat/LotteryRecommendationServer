@@ -14,14 +14,13 @@ func ConvertBlueBallStr(blues string) model.BlueArray {
 	return *(*model.BlueArray)(ballStr2Array(blues))
 }
 
-func ConvertDoubleColorCSVStr(csvBalls string) (redsCnt [6]int, blueCnt int) {
-	/*e.g. 2022-10-06(四),01,05,15,19,26,29,13*/
-	balls := strings.Split(csvBalls, ",")
-	redsStr := balls[1:7]
-	for i, redStr := range redsStr {
+/*e.g. 2022-10-06(四),01,05,15,19,26,29,13*/
+
+func ConvertDoubleColorCSVStr(ball model.DoubleColorBall) (redsCnt [6]int, blueCnt int) {
+	for i, redStr := range strings.Split(ball.Red, ",") {
 		redsCnt[i], _ = strconv.Atoi(redStr)
 	}
-	blueCnt, _ = strconv.Atoi(balls[len(balls)-1])
+	blueCnt, _ = strconv.Atoi(ball.Blue)
 	return
 }
 

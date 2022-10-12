@@ -13,7 +13,7 @@ import (
 var db = &gorm.DB{}
 
 func DBInit() {
-	db = connectDatabase(connCfgInfo())
+	db = connectDatabase(dbConnCfgInfo())
 	if db == nil {
 		return
 	}
@@ -29,14 +29,14 @@ func DBInit() {
 在${database}.${table}上，为所有IP的${user_name}授权所有权限
 */
 
-func connCfgInfo() string {
+func dbConnCfgInfo() string {
 	// TODO 后续从文件读取，文件要加密
 	connCfg := model.DBConn{
-		User:   "lottery",
-		Pawd:   "123123",
-		Host:   "127.0.0.1",
+		User:   "root",
+		Pawd:   "root",
+		Host:   "192.168.1.4",
 		Port:   3306,
-		DbName: "business",
+		DbName: "lottery",
 	}
 	return fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local",
 		connCfg.User, connCfg.Pawd, connCfg.Host, connCfg.Port, connCfg.DbName)

@@ -7,6 +7,17 @@ var CacheDoubleColorBluesCnt = "double-color-blues-cnt"
 type RedArray [34]int
 type BlueArray [17]int
 
+func (arr *RedArray) Add(t RedArray) {
+	for i := range *arr {
+		(*arr)[i] += t[i]
+	}
+}
+func (arr *BlueArray) Add(t BlueArray) {
+	for i := range *arr {
+		(*arr)[i] += t[i]
+	}
+}
+
 type CacheConn struct {
 	Addr     string `json:"addr"`
 	Password string `json:"password"`

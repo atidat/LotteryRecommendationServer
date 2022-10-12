@@ -29,7 +29,7 @@ func FetchHistoryData(hist int) (error, []model.DoubleColorBall) {
 
 	body, err := ioutil.ReadAll(res.Body)
 
-	offRes := &model.OfficialRes{}
+	offRes := &model.OfficialDoubleColor{}
 	err = json.Unmarshal(body, offRes)
 	if err != nil {
 		logrus.Errorf("convert official result failed: %s", err.Error())
@@ -39,9 +39,9 @@ func FetchHistoryData(hist int) (error, []model.DoubleColorBall) {
 	rawData := make([]model.DoubleColorBall, 0)
 	for _, offres := range offRes.Result {
 		rawData = append(rawData, model.DoubleColorBall{
-			Red:  offres.(map[string]interface{})["red"].(string),
-			Blue: offres.(map[string]interface{})["blue"].(string),
-			Time: offres.(map[string]interface{})["date"].(string),
+			Red:  offres.Red,
+			Blue: offres.Blue,
+			Time: offres.Date,
 		})
 	}
 	return nil, rawData
